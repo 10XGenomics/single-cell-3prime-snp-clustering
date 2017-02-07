@@ -1,0 +1,82 @@
+#
+# Copyright (c) 2016 10X Genomics, Inc. All rights reserved.
+#
+filetype bam;
+filetype h5;
+filetype json;
+filetype tsv;
+filetype vcf;
+
+stage FILTER_READS(
+    in  bam    input,
+    in  tsv    cell_barcodes,
+    in  map    align,
+    out bam    output,
+    src py     "stages/snpclust/filter_reads",
+) split using (
+    in  string chunk_start,
+    in  string chunk_end,
+)
+
+stage CALL_SNPS(
+    in  path   reference_path,
+    in  bam    input,
+    in  int    n_donors,
+    out vcf[]  output,
+    src py     "stages/snpclust/call_snps",
+) split using (
+    in  string locus,
+)
+
+stage COUNT_ALLELES(
+    in  path  reference_path,
+    in  bam   reads,
+    in  vcf[] variants,
+    in  tsv   cell_barcodes,
+    in  int   min_snp_call_qual,
+    in  int   min_bcs_per_snp,
+    in  int   min_snp_obs,
+    in  int   min_snp_base_qual,
+    in  float base_error_rate,
+    out vcf   filtered_variants,
+    out h5    raw_allele_bc_matrices_h5,
+    out path  raw_allele_bc_matrices_mex,
+    out h5    likelihood_allele_bc_matrices_h5,
+    out path  likelihood_allele_bc_matrices_mex,
+    src py    "stages/snpclust/count_alleles",
+) split using (
+    in  vcf   chunk_variants,
+    in  json  snps,
+)
+
+stage CLUSTER_CELLS(
+    in  path  reference_path,
+    in  h5    raw_allele_bc_matrices_h5,
+    in  h5    likelihood_allele_bc_matrices_h5,
+    in  int   iterations                        "Number of sampling iterations",
+    in  int   seed                              "Random seed",
+    in  int   burn                              "Number of burn-in iterations",
+    in  int   skip                              "Number of iterations to skip for thinning samples",
+    in  int   min_depth                         "Minimum depth to use a locus",
+    in  float min_posterior                     "Per-cell probability threshold",
+    out json  summary,
+    src py    "stages/snpclust/cluster_cells",
+) split using (
+    in  int   seed,
+    in  int   components,
+    in  int   chain,
+)
+
+stage EVALUATE_SNP_CLUSTERS(
+    in  json cluster_summary,
+    in  json ground_truth,
+    out json summary,
+    src py   "stages/snpclust/evaluate_snp_clusters",
+)
+
+stage SUMMARIZE_REPORTS(
+    in  json cluster_summary,
+    in  json evaluate_summary,
+    out json summary,
+    src py   "stages/snpclust/summarize_reports",
+)

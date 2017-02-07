@@ -1,0 +1,85 @@
+#
+# Copyright (c) 2017 10X Genomics, Inc. All rights reserved.
+#
+@include "_snp_clusterer_stages.mro"
+
+pipeline SNP_CLUSTERER(
+    in  path  reference_path,
+    in  bam   possorted_genome_bam,
+    in  tsv   cell_barcodes,
+    in  map   align,
+    in  int   min_snp_call_qual,
+    in  int   min_bcs_per_snp,
+    in  int   min_snp_obs,
+    in  int   min_snp_base_qual,
+    in  float base_error_rate,
+    in  int   iterations                         "Number of sampling iterations",
+    in  int   seed                               "Random seed",
+    in  int   burn                               "Number of burn-in iterations",
+    in  int   skip                               "Number of iterations to skip for thinning samples",
+    in  int   min_depth                          "Minimum depth to use a locus",
+    in  float min_posterior                      "Per-cell probability threshold",
+    in  json  cluster_ground_truth,
+    out h5    raw_allele_bc_matrices_h5,
+    out path  raw_allele_bc_matrices_mex,
+    out h5    likelihood_allele_bc_matrices_h5,
+    out path  likelihood_allele_bc_matrices_mex,
+    out vcf   variants,
+    out json  summary,
+)
+{
+    call FILTER_READS(
+        input         = self.possorted_genome_bam,
+        cell_barcodes = self.cell_barcodes,
+        align         = self.align,
+    )
+
+    call CALL_SNPS(
+        reference_path = self.reference_path,
+        n_donors       = 2,
+        input          = FILTER_READS.output,
+    )
+
+    call COUNT_ALLELES(
+        reference_path    = self.reference_path,
+        cell_barcodes     = self.cell_barcodes,
+        reads             = FILTER_READS.output,
+        variants          = CALL_SNPS.output,
+        min_snp_call_qual = self.min_snp_call_qual,
+        min_bcs_per_snp   = self.min_bcs_per_snp,
+        min_snp_obs       = self.min_snp_obs,
+        min_snp_base_qual = self.min_snp_base_qual,
+        base_error_rate   = self.base_error_rate,
+    )
+
+    call CLUSTER_CELLS(
+        reference_path                   = self.reference_path,
+        raw_allele_bc_matrices_h5        = COUNT_ALLELES.raw_allele_bc_matrices_h5,
+        likelihood_allele_bc_matrices_h5 = COUNT_ALLELES.likelihood_allele_bc_matrices_h5,
+        seed                             = self.seed,
+        iterations                       = self.iterations,
+        burn                             = self.burn,
+        skip                             = self.skip,
+        min_depth                        = self.min_depth,
+        min_posterior                    = self.min_posterior,
+    )
+
+    call EVALUATE_SNP_CLUSTERS(
+        cluster_summary = CLUSTER_CELLS.summary,
+        ground_truth    = self.cluster_ground_truth,
+    )
+
+    call SUMMARIZE_REPORTS(
+        cluster_summary  = CLUSTER_CELLS.summary,
+        evaluate_summary = EVALUATE_SNP_CLUSTERS.summary,
+    )
+
+    return (
+        raw_allele_bc_matrices_h5         = COUNT_ALLELES.raw_allele_bc_matrices_h5,
+        raw_allele_bc_matrices_mex        = COUNT_ALLELES.raw_allele_bc_matrices_mex,
+        likelihood_allele_bc_matrices_h5  = COUNT_ALLELES.likelihood_allele_bc_matrices_h5,
+        likelihood_allele_bc_matrices_mex = COUNT_ALLELES.likelihood_allele_bc_matrices_mex,
+        variants                          = COUNT_ALLELES.filtered_variants,
+        summary                           = SUMMARIZE_REPORTS.summary,
+    )
+}
