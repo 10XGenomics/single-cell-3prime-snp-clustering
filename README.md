@@ -21,11 +21,8 @@ Same as [Cell Ranger system requirements](https://support.10xgenomics.com/single
   - Install the appropriate Cell Ranger reference data.
     * The example assumes you have installed the hg19-1.2.0 refdata to /opt/10x/refdata-cellranger-hg19-1.2.0
 
-3. Install `snpclust`
-```
-# Obtain cellranger-snpclust-src-1.0.0.tar.gz and place in, e.g., /opt/10x
-tar -zxf cellranger-snpclust-src-1.0.0.tar.gz
-```
+3. Clone this repository to. e.g., /opt/10x/cellranger-snpclust-src-1.0.0
+
 
 # Run the pipeline
 
