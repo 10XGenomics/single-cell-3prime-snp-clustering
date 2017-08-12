@@ -72,9 +72,11 @@ call SNP_CLUSTERER_CS(
 
 ## Enter the 10x environment and run the pipeline
 ```
+# Assuming ranger was extracted to /opt/10x/ranger-1.0.1
+# and this repo was cloned to /opt/10x/cellranger-snpclust-src-1.0.0
 export PATH=/opt/10x/ranger-1.0.1:$PATH
 export MROPATH=/opt/10x/cellranger-snpclust-src-1.0.0/mro:$MROPATH
-export PYTHONPATH=/opt/10x/cellranger-snpclust-src-1.0.0/lib/python/:/opt/10x/cellranger-snpclust-src-1.0.0/tenkit/lib/python/:$PYTHONPATH
+export PYTHONPATH=/opt/10x/cellranger-snpclust-src-1.0.0/lib/python/:/opt/10x/ranger-1.0.1/ranger-cs/1.0.1/tenkit/lib/python:$PYTHONPATH
 ranger mrp example.mro example
 ```
 
