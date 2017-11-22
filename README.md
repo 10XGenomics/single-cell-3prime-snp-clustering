@@ -10,7 +10,7 @@ Using single cell RNA-sequencing data produced by the 10x Genomics Chromium Sing
 Same as [Cell Ranger system requirements](https://support.10xgenomics.com/single-cell/software/overview/system-requirements)
 
 ## Dependencies
-- [Ranger (1.0.1)](https://support.10xgenomics.com/developers/software)
+- [Ranger (v1.0.1 ONLY - newer versions may not work)](https://support.10xgenomics.com/developers/software)
 - [Cell Ranger reference data package](https://support.10xgenomics.com/single-cell/software/downloads/latest)
 
 ## Install
